@@ -16,6 +16,7 @@ zappa_settings = "zappa_settings.json"
 script = "deploy.py"
 dockerfile = "Dockerfile"
 
+
 class ScriptRequirements(FileComponent):
     resource_pkg = resources
     filename = "requirements.deploy.txt"
@@ -68,7 +69,7 @@ class ElasticBeanstalk(Component):
     def create(self):
         with use_dir(Projects.FRONTEND):
             log.info("Calling eb init on the frontend project")
-            #run(["eb", "init"])
+            run(["eb", "init"])
 
     @property
     def installed(self):
@@ -76,17 +77,11 @@ class ElasticBeanstalk(Component):
             return os.path.exists(".elasticbeanstalk")
 
 
-class DockerfileProduction(Component):
-    def create(self):
-        with use_dir(Projects.FRONTEND):
-            data = {}
-
-        with open(dockerfile) as f:
-            data = json.load(f)
-
-        log.info("Writing Dockerfile for non dev environments")
-        with open(dockerfile, "w") as f:
-            json.dump(data, f)
+class FrontendProductionDockerFile(FileComponent):
+    resource_pkg = resources
+    base_path = Projects.FRONTEND
+    filename = dockerfile
+    overwrite = False
 
 
 class Deployment(Component):
@@ -98,5 +93,6 @@ deployment = Deployment(
         ZappaSettingsFile(sub_components=[ZappaSettingsUpdates()]),
         Script(sub_components=[ScriptRequirements()]),
         ElasticBeanstalk(),
+        FrontendProductionDockerFile(),
     ]
 )
